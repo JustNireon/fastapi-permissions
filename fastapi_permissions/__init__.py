@@ -47,9 +47,6 @@ extremely simple and incomplete example:
     async def show_item(item:Item = Permission("view", get_item)):
         return [{"item": item}]
 """
-
-__version__ = "0.2.7"
-
 import functools
 import itertools
 from typing import Any
@@ -57,11 +54,14 @@ from typing import Any
 from fastapi import Depends, HTTPException
 from starlette.status import HTTP_403_FORBIDDEN
 
+__version__ = "0.2.7"
+
+
 # constants
 
 Allow = "Allow"  # acl "allow" action
 Deny = "Deny"  # acl "deny" action
-
+DenyUnless = "DenyUnless"  # acl "deny_unless" action
 Everyone = "system:everyone"  # user principal for everyone
 Authenticated = "system:authenticated"  # authenticated user principal
 
@@ -182,7 +182,13 @@ def has_permission(
             permissions = {permissions}
         if requested_permission in permissions:
             if principal in user_principals:
-                return action == Allow
+                if action == Allow:
+                    return True
+                elif action == DenyUnless:
+                    continue
+                else:  # Deny
+                    return False
+
     return False
 
 
